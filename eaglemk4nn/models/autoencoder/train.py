@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """
+Functions to train autoencoder model.
 """
 import os
 import argparse
@@ -9,6 +10,7 @@ import tensorflow as tf
 import numpy as np
 
 from PIL import Image
+from random import shuffle
 from tensorflow.python.keras import callbacks as cbks
 
 from utils import save_images
@@ -16,7 +18,7 @@ from utils import save_images
 
 def gen(inputdir, batch_size):
     filelist = os.listdir(inputdir)
-    filelist.sort()
+    shuffle(filelist)
     N = len(filelist)
     data = np.zeros((batch_size, 80, 160, 3), dtype=np.uint8)
     while True:
