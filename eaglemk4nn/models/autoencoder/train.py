@@ -14,24 +14,26 @@ from tensorflow.python.keras import callbacks as cbks
 from utils import save_images
 
 
-def gen(inputdir):
+def gen(inputdir, batch_size):
     filelist = os.listdir(inputdir)
     filelist.sort()
     N = len(filelist)
-    data = np.zeros((1, 80, 160, 3), dtype=np.uint8)
+    data = np.zeros((batch_size, 80, 160, 3), dtype=np.uint8)
     while True:
         for i in range(N):
-            # TODO: Add try
+            # Index inside batch.
+            k = i % (batch_size - 1)
+            # Read image
             image = Image.open(os.path.join(inputdir, filelist[i]))
-            data[0] = np.asarray(image)
+            data[k] = np.asarray(image)
             image.close()
-            yield cleanup(data)
+            # Yield, when batch completed.
+            if k == 0 and i != 0:
+                yield cleanup(data)
 
 
 def train_model(name, g_train, d_train, sampler, generator, samples_per_epoch,
-                nb_epoch, z_dim=100, verbose=1, callbacks=[],
-                validation_data=None, nb_val_samples=None,
-                saver=None):
+                epochs, z_dim=100, verbose=1, callbacks=[], saver=None):
     """
     Main training loop.
 
@@ -50,15 +52,17 @@ def train_model(name, g_train, d_train, sampler, generator, samples_per_epoch,
         callbacks += [cbks.ProgbarLogger()]
     callbacks = cbks.CallbackList(callbacks)
 
-    callbacks._set_params({
-        'nb_epoch': nb_epoch,
-        'nb_sample': samples_per_epoch,
+    callback_params = {
+        'epochs': epochs,
+        'samples': samples_per_epoch,
         'verbose': verbose,
         'metrics': callback_metrics,
-    })
+    }
+    callbacks.set_params(callback_params)
+
     callbacks.on_train_begin()
 
-    while epoch < nb_epoch:
+    while epoch < epochs:
       callbacks.on_epoch_begin(epoch)
       samples_seen = 0
       batch_index = 0
@@ -153,7 +157,7 @@ if __name__ == "__main__":
 
         train_model(
                 args.name, g_train, d_train, sampler,
-                gen(args.inputdir),
+                gen(args.inputdir, args.batch),
                 samples_per_epoch=args.epochsize,
-                nb_epoch=args.epoch, verbose=1, saver=saver
+                epochs=args.epoch, verbose=1, saver=saver
                 )

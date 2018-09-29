@@ -22,11 +22,10 @@ z_dim = 512
 
 
 def cleanup(data):
-    X = data[0]
+    X = data
     X = X/127.5 - 1.
     Z = np.random.normal(0, 1, (X.shape[0], z_dim))
     return Z, X
-
 
 def generator(batch_size, gf_dim, ch, rows, cols):
     """
@@ -321,7 +320,14 @@ def get_model(sess, image_shape=(80, 160, 3), gf_dim=64, df_dim=64,
         z2 = np.random.normal(0., 1., z.shape)
         outputs = [d_loss, d_loss_fake, d_loss_legit, d_sum, d_optim]
         with tf.control_dependencies(outputs):
-            updates = [tf.assign(p, new_p) for (p, new_p) in D.updates]
+          updates = []
+          for update in D.updates:
+            if isinstance(update, tuple):
+              p, new_p = update
+              updates.append(tf.assign(p, new_p))
+            else:
+              # assumed already an op
+              updates.append(update)
         outs = sess.run(outputs + updates, feed_dict={
             Img: images, Z: z, Z2: z2, K.learning_phase(): 1
             })
@@ -334,7 +340,14 @@ def get_model(sess, image_shape=(80, 160, 3), gf_dim=64, df_dim=64,
         z2 = np.random.normal(0., 1., z.shape)
         outputs = [g_loss, G_train, g_sum, g_optim]
         with tf.control_dependencies(outputs):
-            updates = [tf.assign(p, new_p) for (p, new_p) in G.updates]
+          updates = []
+          for update in G.updates:
+            if isinstance(update, tuple):
+              p, new_p = update
+              updates.append(tf.assign(p, new_p))
+            else:
+              # assumed already an op
+              updates.append(update)
         outs = sess.run(outputs + updates, feed_dict={
             Img: images, Z: z, Z2: z2, K.learning_phase(): 1
             })
@@ -343,7 +356,14 @@ def get_model(sess, image_shape=(80, 160, 3), gf_dim=64, df_dim=64,
         # encoder
         outputs = [e_loss, G_dec, e_sum, e_optim]
         with tf.control_dependencies(outputs):
-            updates = [tf.assign(p, new_p) for (p, new_p) in E.updates]
+          updates = []
+          for update in G.updates:
+            if isinstance(update, tuple):
+              p, new_p = update
+              updates.append(tf.assign(p, new_p))
+            else:
+              # assumed already an op
+              updates.append(update)
         outs = sess.run(outputs + updates, feed_dict={
             Img: images, Z: z, Z2: z2, K.learning_phase(): 1
             })

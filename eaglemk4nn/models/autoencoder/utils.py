@@ -2,6 +2,7 @@
 Modified from https://github.com/carpedm20/DCGAN-tensorflow/blob/master/utils.py
 """
 import os
+import numpy as np
 import scipy.misc
 import tensorflow as tf
 
@@ -39,3 +40,20 @@ def load(sess, saver, checkpoint_dir, name):
   else:
     print(" [!] Failed reading.")
     return False
+
+def inverse_transform(images):
+    return (images+1.)/2.
+
+def merge(images, size, gray=False):
+    h, w = images.shape[1], images.shape[2]
+    if gray:
+      img = np.zeros((h * size[0], w * size[1]))
+    else:
+      img = np.zeros((h * size[0], w * size[1], 3))
+
+    for idx, image in enumerate(images):
+        i = int(idx % size[1])
+        j = int(idx / size[1])
+        img[j*h:j*h+h, i*w:i*w+w] = image
+
+    return img
