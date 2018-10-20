@@ -1,4 +1,2 @@
+gym
 numpy==1.14.5
-tensorflow==1.10.1
-pillow
-scipy

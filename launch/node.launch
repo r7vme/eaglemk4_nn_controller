@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="eaglemk4_nn_controller" type="run.py" name="nn_controller">
+  </node>
+</launch>
