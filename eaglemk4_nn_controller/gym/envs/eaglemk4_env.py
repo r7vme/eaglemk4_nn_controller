@@ -22,16 +22,13 @@ class EagleMK4Env(gym.Env):
 
         # steering
         # TODO(r7vme): Add throttle
-        self.action_space = gym.spaces.Box(low=np.array([-1.0]),
-                                           high=np.array([1.0]))
+        self.action_space = spaces.Box(low=np.array([-1.0]),
+                                       high=np.array([1.0]))
 
         # camera sensor data
-        self.observation_space = gym.spaces.Box(0, 255,
-                                                self.node.get_sensor_size(),
-                                                dtype=np.uint8)
-
-        # wait until loaded
-        self.node.wait_ready()
+        self.observation_space = spaces.Box(0, 255,
+                                            self.node.get_sensor_size(),
+                                            dtype=np.uint8)
 
     def step(self, action):
         self.node.take_action(action)

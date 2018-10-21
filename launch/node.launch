@@ -1,4 +1,7 @@
 <launch>
-  <node pkg="eaglemk4_nn_controller" type="run.py" name="nn_controller">
-  </node>
+  <group ns="eaglemk4">
+    <remap from="navigation" to="/vesc/high_level/ackermann_cmd_mux/input/nav_0" />
+    <remap from="image" to="usb_cam/image_raw" />
+    <node pkg="eaglemk4_nn_controller" type="run.py" name="nn_controller" output="screen"/>
+  </group>
 </launch>
