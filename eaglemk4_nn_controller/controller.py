@@ -41,7 +41,7 @@ class Controller:
         # buffers raw image for future optimization.
         self.vae = VAEController(buffer_size=100,
                                  image_size=(144, 176, 3),
-                                 batch_size=64,
+                                 batch_size=32,
                                  epoch_per_optimization=1)
         self.env.unwrapped.set_vae(self.vae)
 

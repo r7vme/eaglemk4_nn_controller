@@ -77,7 +77,6 @@ class DDPGWithVAE(DDPG):
                     episodes += 1
 
                     self._reset()
-                    obs = self.env.reset()
                     # Finish rollout on episode finish.
                     break
 
@@ -85,6 +84,7 @@ class DDPGWithVAE(DDPG):
 
             # Train VAE.
             train_start = time.time()
+            print("VAE training: Started...")
             vae.optimize()
             print("VAE training duration:", time.time() - train_start)
 
@@ -93,6 +93,7 @@ class DDPGWithVAE(DDPG):
             critic_losses = []
             train_start = time.time()
             if do_ddpg_training:
+                print("DDPG training: Started...")
                 for t_train in range(self.nb_train_steps):
                     critic_loss, actor_loss = self._train_step(0, None, log=t_train == 0)
                     critic_losses.append(critic_loss)
