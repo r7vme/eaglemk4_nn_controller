@@ -20,7 +20,7 @@ class DrivingNode:
     This node managed via OpenAI gym interface.
     '''
 
-    IMAGE_SIZE = (240, 320, 3)
+    IMAGE_SIZE = (144, 176, 3)
     IMAGE_MSG_ENCODING = "rgb8"
     HZ = 20
     TASK_TEST = 0
@@ -147,6 +147,7 @@ class DrivingNode:
 
     # _wait_reset will wait until human will enable autopilot mode.
     def _wait_reset(self):
+        print("waiting reset")
         while not self.autopilot:
             time.sleep(1.0 / self.HZ)
 
