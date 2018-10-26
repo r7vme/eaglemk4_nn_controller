@@ -114,11 +114,13 @@ class VAEController:
         self.set_target_params()
 
     def save(self, path):
-        self.target_vae.save_json(path)
+        self.target_vae.save_model(path)
 
     def load(self, path):
-        self.target_vae.load_json(path)
+        self.target_vae.load_checkpoint(path)
 
     def set_target_params(self):
-        params, _, _ = self.vae.get_model_params()
-        self.target_vae.set_model_params(params)
+        # TODO: Use tensorflow simple_save.
+        PATH = '/tmp/vae.ckpt'
+        self.vae.save_model(PATH)
+        self.target_vae.load_checkpoint(PATH)
