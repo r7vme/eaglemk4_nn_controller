@@ -12,7 +12,7 @@ import time
 from ackermann_msgs.msg import AckermannDriveStamped
 from sensor_msgs.msg import Image, Joy
 
-
+# TODO: output driving values asynchronously.
 class DrivingNode:
     '''
     DrivingNode node implements ROS node to drive a car.
@@ -20,7 +20,7 @@ class DrivingNode:
     This node managed via OpenAI gym interface.
     '''
 
-    IMAGE_SIZE = (144, 176, 3)
+    IMAGE_SIZE = (80, 160, 3)
     IMAGE_MSG_ENCODING = "rgb8"
     HZ = 20
     TASK_TEST = 0
@@ -36,7 +36,7 @@ class DrivingNode:
         # human took control, which finishes episode.
         self.button_autopilot = 5
         # Use static throttle.
-        self.static_throttle = 0.0
+        self.static_throttle = 0.25
 
         self.image_lock = threading.RLock()
 
