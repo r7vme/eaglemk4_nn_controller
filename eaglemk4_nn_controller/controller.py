@@ -42,24 +42,49 @@ class Controller:
 
         self.env = gym.make('eaglemk4-v0')
 
+        self.vae_batch_size = \
+            rospy.get_param('nn_controller/vae_batch_size', 64)
+        self.vae_buffer_size = \
+            rospy.get_param('nn_controller/vae_buffer_size', 500)
+        self.vae_epoch_number = \
+            rospy.get_param('nn_controller/vae_epoch_number', 10)
+
+        im_h = rospy.get_param('nn_controller/image_height', 80)
+        im_w = rospy.get_param('nn_controller/image_width', 160)
+        im_c = rospy.get_param('nn_controller/image_channels', 3)
+        self.image_size = (im_h, im_w, im_c)
+
+        self.ddpg_batch_size = \
+            rospy.get_param('nn_controller/ddpg_batch_size', 64)
+        self.ddpg_memory_size = \
+            rospy.get_param('nn_controller/ddpg_memory_size', 1000)
+        self.ddpg_training_steps = \
+            rospy.get_param('nn_controller/ddpg_training_steps', 300)
+        self.ddpg_skip_episodes = \
+            rospy.get_param('nn_controller/ddpg_skip_episodes', 5)
+
         # Initialize VAE model and add it to gym environment.
         # VAE does image post processing to latent vector and
         # buffers raw image for future optimization.
-        self.vae = VAEController(buffer_size=500,
-                                 image_size=(80, 160, 3),
-                                 batch_size=64,
-                                 epoch_per_optimization=10)
+        self.vae = VAEController(buffer_size=self.vae_buffer_size,
+                                 image_size=self.image_size,
+                                 batch_size=self.vae_batch_size,
+                                 epoch_per_optimization=self.vae_epoch_number)
         self.env.unwrapped.set_vae(self.vae)
 
         if self._any_precompiled_models():
             self.ddpg = DDPG.load(self.ddpg_path, self.env)
             self.vae.load(self.vae_path)
+            self.ddpg_skip_episodes = 0
             print("Loaded precompiled models from ", self.model_path)
+        else:
+            self.ddpg = self._init_ddpg()
+            print("Initialized empty models.")
 
         # Don't run anything until human approves.
-        print("EagleMK4 Neural Network Controller loaded!")
-        print("1. Press triangle to select task.")
-        print("2. Press right bumper to start task.")
+        print("EagleMK4 Neural Network Controller is loaded!")
+        print("1. Press triangle to select a task.")
+        print("2. Press right bumper to start a task.")
         self._wait_autopilot()
 
         # Run infinite loop.
@@ -77,13 +102,13 @@ class Controller:
         return DDPG(LnMlpPolicy,
                     self.env,
                     verbose=1,
-                    batch_size=64,
+                    batch_size=self.ddpg_batch_size,
                     clip_norm=5e-3,
                     gamma=0.9,
                     param_noise=None,
                     action_noise=action_noise,
-                    memory_limit=1000,
-                    nb_train_steps=300,
+                    memory_limit=self.ddpg_memory_size,
+                    nb_train_steps=self.ddpg_training_steps,
                     )
 
     def run(self):
@@ -92,58 +117,54 @@ class Controller:
             # - train - runs online training.
             # - test - evaluates trained models.
             if self.env.unwrapped.is_training():
-                print_grn("Training started")
-                skip_episodes = 5
-                #  Initialize new model if needed.
-                if not hasattr(self, 'ddpg'):
-                    self.ddpg = self._init_ddpg()
-                    skip_episodes = 0
-
-                episode = 1
-                skip_episodes = 5
-                do_ddpg_training = False
-                while self.env.unwrapped.is_training():
-                    if episode > skip_episodes:
-                        do_ddpg_training = True
-                    self.ddpg.learn(vae=self.vae,
-                                    do_ddpg_training=do_ddpg_training)
-                    episode += 1
-                    print_grn("Ready for new episode")
-                    self._wait_autopilot()
-
-                # Finally save model files.
-                self.ddpg.save(self.ddpg_path)
-                self.vae.save(self.vae_path)
-                print_grn("Training finished")
+                self.run_training()
             elif self.env.unwrapped.is_testing():
-                print_grn("Testing started")
+                self.run_testing()
 
-                if self._any_precompiled_models():
-                    # Reload models and run testing episodes.
-                    self.ddpg = DDPG.load(self.ddpg_path, self.env)
-                    self.vae.load(self.vae_path)
-                    while self.env.unwrapped.is_testing():
-                        self.run_testing_episode()
-                else:
-                    print("No precompiled models found.",
-                          "Please run training by pressing triange",
-                          "and press-keep right bumpe."
-                          "Unpressing right bumper stops the episode.")
-                    while self.env.unwrapped.is_testing():
-                        time.sleep(1.0 / self.HZ)
-                print_grn("Testing finished")
+    def run_training(self):
+        episode = 1
+        do_ddpg_training = False
 
-    def run_testing_episode(self):
-        # Reset will wait for autopilot mode ("right bumper" pressed).
-        obs = self.env.reset()
-        while True:
-            time.sleep(1.0 / self.HZ)
-            action, _states = self.ddpg.predict(obs)
-            obs, reward, done, info = self.env.step(action)
-            print(action)
-            if done:
-                print("Testing episode finished.")
-                return
+        print_grn("Training started")
+        while self.env.unwrapped.is_training():
+            if episode > self.ddpg_skip_episodes:
+                do_ddpg_training = True
+            self.ddpg.learn(vae=self.vae,
+                            do_ddpg_training=do_ddpg_training)
+            episode += 1
+            print_grn("Ready for new episode")
+            self._wait_autopilot()
+
+        # Finally save model files.
+        self.ddpg.save(self.ddpg_path)
+        self.vae.save(self.vae_path)
+        print_grn("Training finished")
+
+    def run_testing(self):
+        print_grn("Testing started")
+        if self._any_precompiled_models():
+            # Reload models and run testing episodes.
+            self.ddpg = DDPG.load(self.ddpg_path, self.env)
+            self.vae.load(self.vae_path)
+            while self.env.unwrapped.is_testing():
+                # Reset will wait for autopilot mode ("right bumper" pressed).
+                obs = self.env.reset()
+                while True:
+                    time.sleep(1.0 / self.HZ)
+                    action, _states = self.ddpg.predict(obs)
+                    obs, reward, done, info = self.env.step(action)
+                    print(action)
+                    if done:
+                        print("Testing episode finished.")
+                        break
+        else:
+            print("No precompiled models found.",
+                  "Please run training by pressing triange",
+                  "and press-keep right bumpe."
+                  "Unpressing right bumper stops the episode.")
+            while self.env.unwrapped.is_testing():
+                time.sleep(1.0 / self.HZ)
+        print_grn("Testing finished")
 
     def _any_precompiled_models(self):
         if os.path.exists(self.ddpg_path) and \
