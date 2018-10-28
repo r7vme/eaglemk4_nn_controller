@@ -43,7 +43,7 @@ class Controller:
         # Initialize VAE model and add it to gym environment.
         # VAE does image post processing to latent vector and
         # buffers raw image for future optimization.
-        self.vae = VAEController(buffer_size=1000,
+        self.vae = VAEController(buffer_size=500,
                                  image_size=(80, 160, 3),
                                  batch_size=64,
                                  epoch_per_optimization=10)
@@ -91,12 +91,14 @@ class Controller:
             # - test - evaluates trained models.
             if self.env.unwrapped.is_training():
                 print_grn("Training started")
+                skip_episodes = 5
                 #  Initialize new model if needed.
                 if not hasattr(self, 'ddpg'):
                     self.ddpg = self._init_ddpg()
+                    skip_episodes = 0
 
                 episode = 1
-                skip_episodes = 3
+                skip_episodes = 5
                 do_ddpg_training = False
                 while self.env.unwrapped.is_training():
                     if episode > skip_episodes:
@@ -135,7 +137,7 @@ class Controller:
         while True:
             time.sleep(1.0 / self.HZ)
             action, _states = self.ddpg.predict(obs)
-            obs, reward, done, info = self.env.step(np.array([0.5]))
+            obs, reward, done, info = self.env.step(action)
             print(action)
             if done:
                 print("Testing episode finished.")

@@ -5,12 +5,16 @@
 VAE controller for runtime optimization.
 '''
 
+import os
 import numpy as np
 
 from .model import ConvVAE
 
 
 class VAEController:
+    PATH_TARGET = "target"
+    PATH_TRAINING = "training"
+
     def __init__(self, z_size=512, image_size=(80, 160, 3),
                  learning_rate=0.0001, kl_tolerance=0.5,
                  epoch_per_optimization=10, batch_size=64,
@@ -90,8 +94,6 @@ class VAEController:
 
     def optimize(self):
         ds = self.buffer_get_copy()
-        # TODO: may be do buffer reset.
-        # self.buffer_reset()
 
         num_batches = int(np.floor(len(ds)/self.batch_size))
 
@@ -114,10 +116,21 @@ class VAEController:
         self.set_target_params()
 
     def save(self, path):
-        self.target_vae.save_model(path)
+        path_target = os.path.join(path, self.PATH_TARGET)
+        path_training = os.path.join(path, self.PATH_TRAINING)
+
+        if not os.path.exists(path_target):
+            os.makedirs(path_target)
+
+        if not os.path.exists(path_training):
+            os.makedirs(path_training)
+
+        self.vae.save_model(os.path.join(path, self.PATH_TRAINING))
+        self.target_vae.save_model(os.path.join(path, self.PATH_TARGET))
 
     def load(self, path):
-        self.target_vae.load_checkpoint(path)
+        self.vae.load_checkpoint(os.path.join(path, self.PATH_TRAINING))
+        self.target_vae.load_checkpoint(os.path.join(path, self.PATH_TARGET))
 
     def set_target_params(self):
         # TODO: Use tensorflow simple_save.
