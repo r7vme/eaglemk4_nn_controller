@@ -103,13 +103,14 @@ class VAEController:
                 batch = ds[idx * self.batch_size:(idx + 1) * self.batch_size]
                 obs = batch.astype(np.float) / 255.0
                 feed = {self.vae.x: obs, }
-                (train_loss, r_loss, kl_loss, train_step, _) = self.vae.sess.run([
-                    self.vae.loss,
-                    self.vae.r_loss,
-                    self.vae.kl_loss,
-                    self.vae.global_step,
-                    self.vae.train_op
-                ], feed)
+                (train_loss, r_loss, kl_loss, train_step, _) = \
+                    self.vae.sess.run([
+                        self.vae.loss,
+                        self.vae.r_loss,
+                        self.vae.kl_loss,
+                        self.vae.global_step,
+                        self.vae.train_op
+                    ], feed)
                 if ((train_step + 1) % 50 == 0):
                     print("VAE: optimization step",
                           (train_step + 1), train_loss, r_loss, kl_loss)

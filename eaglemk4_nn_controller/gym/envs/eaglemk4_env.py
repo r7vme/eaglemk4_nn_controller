@@ -39,7 +39,8 @@ class EagleMK4Env(gym.Env):
         # VAE latent vector data
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, self.z_size), dtype=np.float32)
+                                            shape=(1, self.z_size),
+                                            dtype=np.float32)
 
     def step(self, action):
         self.node.take_action(action)

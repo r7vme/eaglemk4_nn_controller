@@ -11,16 +11,18 @@ import numpy as np
 import time
 import rospy
 
-import eaglemk4_nn_controller.gym
+import eaglemk4_nn_controller.gym  # noqa: F401
 from stable_baselines.ddpg.policies import LnMlpPolicy
 from stable_baselines.ddpg.noise import OrnsteinUhlenbeckActionNoise
 from eaglemk4_nn_controller.models.ddpg_with_vae import DDPGWithVAE as DDPG
 from eaglemk4_nn_controller.models.vae.controller import VAEController
 
+
 def print_grn(s):
-    GRN='\033[32m'
-    END='\033[0m'
+    GRN = '\033[32m'
+    END = '\033[0m'
     print(GRN + s + END)
+
 
 class Controller:
 
@@ -124,8 +126,8 @@ class Controller:
                         self.run_testing_episode()
                 else:
                     print("No precompiled models found.",
-                          "Please run training by pressing triange (switch task)",
-                          "and press-keep right bumper (allow autopilot)."
+                          "Please run training by pressing triange",
+                          "and press-keep right bumpe."
                           "Unpressing right bumper stops the episode.")
                     while self.env.unwrapped.is_testing():
                         time.sleep(1.0 / self.HZ)

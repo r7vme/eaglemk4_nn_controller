@@ -7,11 +7,9 @@ and reimplements learning method.
 """
 
 import time
-
 import numpy as np
-from mpi4py import MPI
 
-from stable_baselines import logger
+from mpi4py import MPI
 from stable_baselines.ddpg.ddpg import DDPG
 
 
@@ -26,7 +24,8 @@ class DDPGWithVAE(DDPG):
     def learn(self, callback=None, vae=None, do_ddpg_training=True):
         rank = MPI.COMM_WORLD.Get_rank()
         # we assume symmetric actions.
-        assert np.all(np.abs(self.env.action_space.low) == self.env.action_space.high)
+        assert np.all(np.abs(self.env.action_space.low) ==
+                      self.env.action_space.high)
 
         self.episode_reward = np.zeros((1,))
         with self.sess.as_default(), self.graph.as_default():
@@ -47,14 +46,17 @@ class DDPGWithVAE(DDPG):
             # Rollout one episode.
             while True:
                 # Predict next action.
-                action, q_value = self._policy(obs, apply_noise=True, compute_q=True)
+                action, q_value = self._policy(obs,
+                                               apply_noise=True,
+                                               compute_q=True)
                 print(action)
                 assert action.shape == self.env.action_space.shape
 
                 # Execute next action.
                 if rank == 0 and self.render:
                     self.env.render()
-                new_obs, reward, done, _ = self.env.step(action * np.abs(self.action_space.low))
+                new_obs, reward, done, _ = \
+                    self.env.step(action * np.abs(self.action_space.low))
 
                 step += 1
                 total_steps += 1
@@ -97,7 +99,8 @@ class DDPGWithVAE(DDPG):
             if do_ddpg_training:
                 print("DDPG training: Started...")
                 for t_train in range(self.nb_train_steps):
-                    critic_loss, actor_loss = self._train_step(0, None, log=t_train == 0)
+                    critic_loss, actor_loss = \
+                        self._train_step(0, None, log=t_train == 0)
                     critic_losses.append(critic_loss)
                     actor_losses.append(actor_loss)
                     self._update_target_net()
