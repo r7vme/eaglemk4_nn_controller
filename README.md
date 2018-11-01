@@ -1,2 +1,3 @@
 # eaglemk4_nn_controller
-Neural network based controller for EagleMK4 car.
+
+Reinforsment learning (VAE + DDPG) controller for EagleMK4 car.
